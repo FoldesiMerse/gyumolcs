@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gyümölcsnapló</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f6fff4;
+    color: #17351d;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    padding: 28px 18px;
+}
+
+h1 {
+    text-align: center;
+    margin: 5px 0 8px;
+    font-size: 38px;
+}
+
+.subtitle {
+    text-align: center;
+    color: #62806a;
+    margin-bottom: 25px;
+}
+
+.card {
+    background: white;
+    border-radius: 22px;
+    padding: 22px;
+    box-shadow: 0 8px 25px #00000012;
+    margin-bottom: 22px;
+}
+
+.total {
+    text-align: center;
+    font-size: 25px;
+    font-weight: bold;
+}
+
+.total span {
+    color: #2e9b45;
+}
+
+.progress {
+    height: 16px;
+    background: #e8f1e6;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-top: 15px;
+}
+
+.bar {
+    height: 100%;
+    width: 0%;
+    background: #49b85d;
+    border-radius: 20px;
+    transition: 0.3s;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 15px;
+}
+
+.fruit {
+    border: 0;
+    background: #f8fbf7;
+    border-radius: 18px;
+    padding: 14px;
+    cursor: pointer;
+    transition: 0.18s;
+    box-shadow: 0 2px 8px #0000000d;
+}
+
+.fruit:hover {
+    transform: translateY(-4px);
+    background: #effbef;
+}
+
+.fruit:active {
+    transform: scale(0.95);
+}
+
+.fruit img {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+    display: block;
+    margin: auto;
+}
+
+.name {
+    font-weight: bold;
+    margin-top: 8px;
+}
+
+.count {
+    font-size: 14px;
+    color: #5d7562;
+    margin-top: 4px;
+}
+
+.history {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+
+.tag {
+    background: #edf8ed;
+    padding: 8px 11px;
+    border-radius: 12px;
+}
+
+button.reset {
+    display: block;
+    margin: 18px auto 0;
+    border: 0;
+    background: #ef5350;
+    color: white;
+    padding: 11px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: bold;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>🍎 Gyümölcsnapló</h1>
+
+    <div class="subtitle">
+        Kattints a gyümölcs képére, és számold a mai fogyasztásodat!
+    </div>
+
+    <div class="card">
+
+        <div class="total">
+            Mai gyümölcsfogyasztás:
+            <span id="total">0</span> adag
+        </div>
+
+        <div class="progress">
+            <div class="bar" id="bar"></div>
+        </div>
+
+    </div>
+
+    <div class="card">
+
+        <div class="grid" id="fruits"></div>
+
+        <button class="reset" onclick="resetAll()">
+            🔄 Nap újrakezdése
+        </button>
+
+    </div>
+
+    <div class="card">
+
+        <h2>Mai lista</h2>
+
+        <div class="history" id="history">
+            <span style="color:#78917c">
+                Még nincs hozzáadott gyümölcs.
+            </span>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+const fruits = [
+    ["alma", "🍎"],
+    ["banán", "🍌"],
+    ["narancs", "🍊"],
+    ["eper", "🍓"],
+    ["szőlő", "🍇"],
+    ["görögdinnye", "🍉"],
+    ["ananász", "🍍"],
+    ["őszibarack", "🍑"],
+    ["körte", "🍐"],
+    ["cseresznye", "🍒"],
+    ["kiwi", "🥝"],
+    ["mangó", "🥭"]
+];
+
+let counts = JSON.parse(
+    localStorage.getItem("fruitCounts") || "{}"
+);
+
+fruits.forEach(([name]) => {
+    if (counts[name] == null) {
+        counts[name] = 0;
+    }
+});
+
+function render() {
+
+    document.getElementById("fruits").innerHTML =
+        fruits.map(([name, emoji]) => `
+
+        <button class="fruit" onclick="addFruit('${name}')">
+
+            <img
+                alt="${name}"
+                src="data:image/svg+xml;charset=UTF-8,${encodeURIComponent(`
+                    <svg xmlns="http://www.w3.org/2000/svg"
+                         width="120"
+                         height="120">
+
+                        <text
+                            x="60"
+                            y="88"
+                            text-anchor="middle"
+                            font-size="82">
+                            ${emoji}
+                        </text>
+
+                    </svg>
+                `)}"
+            >
+
+            <div class="name">
+                ${name}
+            </div>
+
+            <div class="count">
+                ${counts[name]} adag
+            </div>
+
+        </button>
+
+    `).join("");
+
+    update();
+}
+
+function addFruit(name) {
+
+    counts[name]++;
+
+    save();
+    render();
+}
+
+function save() {
+
+    localStorage.setItem(
+        "fruitCounts",
+        JSON.stringify(counts)
+    );
+}
+
+function update() {
+
+    const total =
+        Object.values(counts)
+        .reduce((a, b) => a + b, 0);
+
+    document.getElementById("total")
+        .textContent = total;
+
+    document.getElementById("bar")
+        .style.width =
+        Math.min(total / 5 * 100, 100) + "%";
+
+    document.getElementById("history").innerHTML =
+        total
+
+        ? fruits
+            .filter(([name]) => counts[name] > 0)
+            .map(([name, emoji]) => `
+                <span class="tag">
+                    ${emoji} ${name}:
+                    <b>${counts[name]}</b>
+                </span>
+            `)
+            .join("")
+
+        : `
+            <span style="color:#78917c">
+                Még nincs hozzáadott gyümölcs.
+            </span>
+        `;
+}
+
+function resetAll() {
+
+    if (confirm("Biztosan törlöd a mai adatokat?")) {
+
+        fruits.forEach(([name]) => {
+            counts[name] = 0;
+        });
+
+        save();
+        render();
+    }
+}
+
+render();
+
+</script>
+
+</body>
+</html>
