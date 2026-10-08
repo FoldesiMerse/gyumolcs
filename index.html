@@ -315,7 +315,573 @@ function resetAll() {
         render();
     }
 }
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<title>🍉 Gyümölcsnapló</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(135deg, #f3fff1, #fffaf0);
+    color: #17351d;
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+    padding: 30px 18px;
+}
+
+h1 {
+    text-align: center;
+    font-size: 42px;
+    margin: 5px 0;
+}
+
+.subtitle {
+    text-align: center;
+    color: #64806b;
+    margin-bottom: 25px;
+}
+
+.card {
+    background: white;
+    border-radius: 24px;
+    padding: 24px;
+    margin-bottom: 22px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+}
+
+.total {
+    text-align: center;
+    font-size: 26px;
+    font-weight: bold;
+}
+
+.total span {
+    color: #31a64b;
+}
+
+.progress {
+    height: 18px;
+    background: #e6efe4;
+    border-radius: 20px;
+    overflow: hidden;
+    margin-top: 16px;
+}
+
+.bar {
+    height: 100%;
+    width: 0%;
+    background: #45b95a;
+    border-radius: 20px;
+    transition: width .3s;
+}
+
+.search {
+    width: 100%;
+    padding: 14px 18px;
+    border: 2px solid #e0eadf;
+    border-radius: 15px;
+    font-size: 16px;
+    margin-bottom: 20px;
+    outline: none;
+}
+
+.search:focus {
+    border-color: #55b867;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns:
+        repeat(auto-fill, minmax(145px, 1fr));
+    gap: 15px;
+}
+
+.fruit {
+    border: none;
+    background: #f8fbf7;
+    border-radius: 20px;
+    padding: 15px;
+    cursor: pointer;
+    transition: .18s;
+    box-shadow: 0 3px 10px rgba(0,0,0,.06);
+}
+
+.fruit:hover {
+    transform: translateY(-5px);
+    background: #edfaed;
+    box-shadow: 0 8px 18px rgba(0,0,0,.10);
+}
+
+.fruit:active {
+    transform: scale(.94);
+}
+
+.emoji {
+    font-size: 65px;
+    height: 75px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.name {
+    font-weight: bold;
+    font-size: 16px;
+    margin-top: 7px;
+}
+
+.count {
+    color: #6b806e;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+.history {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+
+.tag {
+    background: #edf8ed;
+    padding: 9px 13px;
+    border-radius: 13px;
+}
+
+.reset {
+    display: block;
+    margin: 22px auto 0;
+    border: none;
+    background: #ed514e;
+    color: white;
+    padding: 12px 22px;
+    border-radius: 13px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.reset:hover {
+    background: #d9403d;
+}
+
+.category {
+    margin-top: 25px;
+    margin-bottom: 12px;
+    color: #347342;
+}
+
+@media(max-width:600px) {
+
+    h1 {
+        font-size: 32px;
+    }
+
+    .grid {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+    .emoji {
+        font-size: 55px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>🍎 Gyümölcsnapló 🍍</h1>
+
+<div class="subtitle">
+    Kattints egy gyümölcsre, hogy hozzáadd a mai fogyasztásodhoz!
+</div>
+
+
+<!-- ÖSSZESÍTÉS -->
+
+<div class="card">
+
+    <div class="total">
+        Mai fogyasztás:
+        <span id="total">0</span> adag
+    </div>
+
+    <div class="progress">
+        <div class="bar" id="bar"></div>
+    </div>
+
+</div>
+
+
+<!-- GYÜMÖLCSÖK -->
+
+<div class="card">
+
+    <input
+        class="search"
+        id="search"
+        placeholder="🔎 Keress egy gyümölcsöt..."
+        oninput="render()"
+    >
+
+    <h2 class="category">🍏 Klasszikus gyümölcsök</h2>
+    <div class="grid" id="classic"></div>
+
+    <h2 class="category">🌴 Egzotikus gyümölcsök</h2>
+    <div class="grid" id="exotic"></div>
+
+    <h2 class="category">✨ Különleges gyümölcsök</h2>
+    <div class="grid" id="rare"></div>
+
+    <button class="reset" onclick="resetAll()">
+        🔄 Mai adatok törlése
+    </button>
+
+</div>
+
+
+<!-- MAI LISTA -->
+
+<div class="card">
+
+    <h2>📋 Mai gyümölcsök</h2>
+
+    <div class="history" id="history">
+        <span style="color:#78917c">
+            Még nem adtál hozzá gyümölcsöt.
+        </span>
+    </div>
+
+</div>
+
+</div>
+
+
+<script>
+
+const fruits = {
+
+classic: [
+
+    ["Alma", "🍎"],
+    ["Banán", "🍌"],
+    ["Narancs", "🍊"],
+    ["Mandarin", "🍊"],
+    ["Citrom", "🍋"],
+    ["Lime", "🍋"],
+    ["Eper", "🍓"],
+    ["Málna", "🍓"],
+    ["Szeder", "🫐"],
+    ["Áfonya", "🫐"],
+    ["Szőlő", "🍇"],
+    ["Görögdinnye", "🍉"],
+    ["Sárgadinnye", "🍈"],
+    ["Körte", "🍐"],
+    ["Őszibarack", "🍑"],
+    ["Nektarin", "🍑"],
+    ["Cseresznye", "🍒"],
+    ["Meggy", "🍒"],
+    ["Szilva", "🫐"],
+    ["Sárgabarack", "🍑"],
+    ["Gránátalma", "❤️"],
+    ["Füge", "🫐"],
+    ["Kaki / Datolyaszilva", "🟠"]
+
+],
+
+exotic: [
+
+    ["Ananász", "🍍"],
+    ["Mangó", "🥭"],
+    ["Papaya", "🥭"],
+    ["Kivi", "🥝"],
+    ["Kókusz", "🥥"],
+    ["Maracuja", "🟣"],
+    ["Pitaja / Sárkánygyümölcs", "🐉"],
+    ["Guava", "🟢"],
+    ["Licsi", "🔴"],
+    ["Rambután", "🔴"],
+    ["Karambola", "⭐"],
+    ["Jackfruit", "🟢"],
+    ["Durian", "🟢"],
+    ["Mangosztán", "🟣"],
+    ["Tamarindusz", "🟤"],
+    ["Feijoa", "🟢"],
+    ["Pomelo", "🍊"],
+    ["Kumkvat", "🟠"],
+    ["Longan", "🟤"],
+    ["Salak / Kígyógyümölcs", "🟤"],
+    ["Cherimoya", "🟢"],
+    ["Graviola", "🟢"],
+    ["Pepino", "🟡"],
+    ["Tamarillo", "🔴"],
+    ["Breadfruit", "🟢"]
+
+],
+
+rare: [
+
+    ["Ackee", "🔴"],
+    ["Atemoya", "🟢"],
+    ["Canistel", "🟡"],
+    ["Cupuaçu", "🟤"],
+    ["Jabuticaba", "🟣"],
+    ["Lucuma", "🟡"],
+    ["Mamey", "🟠"],
+    ["Sapodilla", "🟤"],
+    ["Santol", "🟡"],
+    ["Buddha's Hand", "🍋"],
+    ["Finger Lime", "🟢"],
+    ["Miracle Fruit", "🔴"],
+    ["Monstera deliciosa", "🟢"],
+    ["Medlar / Naspolya", "🟤"],
+    ["Jujube / Zsidótövis", "🔴"],
+    ["Rose Apple", "🍎"],
+    ["Wax Apple", "🔴"],
+    ["Star Apple", "🟣"],
+    ["Black Sapote", "🟢"],
+    ["White Sapote", "🟢"],
+    ["Kiwano", "🟠"],
+    ["Bael", "🟡"],
+    ["Wood Apple", "🟤"],
+    ["Bignay", "🔴"],
+    ["Camu Camu", "🔴"],
+    ["Acerola", "🔴"],
+    ["Aronia", "🫐"],
+    ["Physalis", "🟡"],
+    ["Maqui", "🫐"],
+    ["Cloudberry / Mocsári hamvas szeder", "🟠"]
+
+]
+
+};
+
+
+let counts =
+    JSON.parse(localStorage.getItem("fruitCounts")) || {};
+
+
+function allFruits() {
+
+    return [
+        ...fruits.classic,
+        ...fruits.exotic,
+        ...fruits.rare
+    ];
+
+}
+
+
+allFruits().forEach(([name]) => {
+
+    if (counts[name] === undefined) {
+        counts[name] = 0;
+    }
+
+});
+
+
+function save() {
+
+    localStorage.setItem(
+        "fruitCounts",
+        JSON.stringify(counts)
+    );
+
+}
+
+
+function addFruit(name) {
+
+    counts[name]++;
+
+    save();
+
+    render();
+
+}
+
+
+function fruitHTML(name, emoji) {
+
+    return `
+
+    <button
+        class="fruit"
+        onclick="addFruit('${name}')"
+    >
+
+        <div class="emoji">
+            ${emoji}
+        </div>
+
+        <div class="name">
+            ${name}
+        </div>
+
+        <div class="count">
+            ${counts[name]} adag
+        </div>
+
+    </button>
+
+    `;
+
+}
+
+
+function renderCategory(category, elementId, search) {
+
+    const container =
+        document.getElementById(elementId);
+
+    const filtered =
+        fruits[category].filter(([name]) =>
+            name.toLowerCase()
+                .includes(search.toLowerCase())
+        );
+
+    container.innerHTML =
+        filtered
+        .map(([name, emoji]) =>
+            fruitHTML(name, emoji)
+        )
+        .join("");
+
+}
+
+
+function render() {
+
+    const search =
+        document.getElementById("search")
+        .value;
+
+    renderCategory(
+        "classic",
+        "classic",
+        search
+    );
+
+    renderCategory(
+        "exotic",
+        "exotic",
+        search
+    );
+
+    renderCategory(
+        "rare",
+        "rare",
+        search
+    );
+
+    update();
+
+}
+
+
+function update() {
+
+    const total =
+        Object.values(counts)
+        .reduce((a,b) => a + b, 0);
+
+    document.getElementById("total")
+        .textContent = total;
+
+
+    /*
+       5 adag = 100%
+    */
+
+    const percentage =
+        Math.min((total / 5) * 100, 100);
+
+    document.getElementById("bar")
+        .style.width = percentage + "%";
+
+
+    const history =
+        document.getElementById("history");
+
+
+    const eaten =
+        allFruits()
+        .filter(([name]) => counts[name] > 0);
+
+
+    if (eaten.length === 0) {
+
+        history.innerHTML = `
+            <span style="color:#78917c">
+                Még nem adtál hozzá gyümölcsöt.
+            </span>
+        `;
+
+        return;
+
+    }
+
+
+    history.innerHTML =
+        eaten
+        .map(([name, emoji]) => `
+
+            <span class="tag">
+                ${emoji}
+                ${name}:
+                <b>${counts[name]}</b>
+            </span>
+
+        `)
+        .join("");
+
+}
+
+
+function resetAll() {
+
+    if (
+        confirm(
+            "Biztosan törlöd a mai gyümölcsfogyasztást?"
+        )
+    ) {
+
+        allFruits().forEach(([name]) => {
+
+            counts[name] = 0;
+
+        });
+
+        save();
+
+        render();
+
+    }
+
+}
+
+
+render();
+
+</script>
+
+</body>
+</html>
 render();
 
 </script>
